@@ -1,0 +1,115 @@
+/*
+ * Copyright 2021 EPAM Systems
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+}
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+apply from: "${rootProject.rootDir}/release.gradle"
+apply from: "${project.scripts_url}/${project.scripts_branch}/signing.gradle"
+
+
+android {
+    compileSdkVersion 32
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        minSdkVersion 28
+        targetSdkVersion 32
+        versionCode 1
+        versionName "1.0"
+
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+}
+
+
+configurations {
+    internalize
+}
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+task internalizeJar(type: ShadowJar) {
+    dependencies {
+        include(dependency(':agent-java-junit'))
+    }
+
+    archiveClassifier.set('intern')
+    archiveVersion.set('')
+    exclude 'agent.properties'
+
+    def pkg = 'com.epam.reportportal.junit5'
+    def shadowPrefix = 'android'
+    relocate pkg, [shadowPrefix, pkg].join('.')
+    configurations = [project.configurations.internalize]
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
+
+    // Android Espresso libraries
+    api "androidx.test:runner:1.4.0"
+    implementation 'androidx.test.ext:junit:1.1.3'
+    implementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    // Report Portal libraries
+    implementation fileTree(dir:'libs', include: ['*.jar'])
+    //noinspection GradleCompatible
+    implementation 'com.android.support:appcompat-v7:21.0.3'
+    internalize project(':agent-java-junit')
+    api tasks.internalizeJar.outputs.files
+    api 'com.epam.reportportal:client-java:5.1.4'
+    api 'com.google.code.findbugs:jsr305:3.0.2'
+    api 'com.epam.reportportal:commons-model:5.0.0'
+
+    // JUnit 5
+    api "org.junit.jupiter:junit-jupiter-api:${project.junit5Version}"
+    implementation "org.junit.platform:junit-platform-runner:${project.junit5RunnerVersion}"
+    implementation "org.junit.jupiter:junit-jupiter-engine:${project.junit5Version}"
+
+    // android-junit5 necessary libraries
+    implementation 'de.mannodermaus.junit5:android-test-core:1.2.2'
+    implementation 'de.mannodermaus.junit5:android-test-runner:1.2.2'
+}
+
+project.afterEvaluate {
+    processDebugJavaRes.configure {
+        filesMatching("agent.properties") { expand(project.properties) }
+    }
+
+    processReleaseJavaRes.configure {
+        filesMatching("agent.properties") { expand(project.properties) }
+    }
+}
+

@@ -1,0 +1,92 @@
+plugins {
+    id 'com.android.test'
+    id 'kotlin-android'
+}
+
+android {
+    compileSdkVersion = rootProject.compileSdkVersion.toInteger()
+    buildToolsVersion = rootProject.buildToolsVersion
+
+
+    packagingOptions {
+        exclude "META-INF/LICENSE*"
+    }
+
+    testOptions {
+        animationsDisabled=true
+    }
+
+    targetProjectPath ':app'
+
+    defaultConfig {
+        minSdkVersion 28
+        targetSdkVersion 32
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'com.epam.reportportal.android.junit5.AndroidJUnit5ReportPortalRunner'
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+
+    implementation project(':app')
+
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+
+    implementation 'androidx.test.ext:junit:1.1.3'
+    implementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    implementation fileTree(dir:'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:21.0.3'
+
+    implementation (project(':agent-android-junit5')) {
+        exclude group: 'org.aspectj'
+    }
+
+    implementation ('com.epam.reportportal:logger-java-logback:5.1.1') {
+        exclude group: 'com.epam.reportportal' // Already included by the agent dependency
+    }
+
+    implementation 'androidx.test:runner:1.4.0'
+    implementation 'de.mannodermaus.junit5:android-test-core:1.2.2'
+    implementation 'de.mannodermaus.junit5:android-test-runner:1.2.2'
+
+    implementation "org.junit.platform:junit-platform-runner:1.7.1"
+    implementation "org.junit.jupiter:junit-jupiter-engine:5.7.1"
+
+    // JUnit5 (Optional) If you need "Parameterized Tests"
+    implementation "org.junit.jupiter:junit-jupiter-params:5.7.1"
+    implementation ('com.epam.reportportal:logger-java-logback:5.1.1') {
+        exclude group: 'com.epam.reportportal' // Already included by the agent dependency
+    }
+    implementation 'ch.qos.logback:logback-classic:1.2.10'
+    implementation 'androidx.test.ext:junit:1.1.3'
+    implementation 'androidx.test.espresso:espresso-core:3.4.0'
+    implementation 'androidx.test:core-ktx:1.4.0'
+
+    implementation (project(path: ':agent-java-junit')) {
+        exclude group: 'org.aspectj'
+    }
+}
